@@ -1,0 +1,12 @@
+**/cache
+**/debug
+**/paste-cache
+**/plugins
+**/projects
+**/todos
+.claude-code-api.json
+claude_code_auth.sh
+history.jsonl
+settings.json
+settings.local.json
+stats-cache.json
