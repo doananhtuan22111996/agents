@@ -4,6 +4,10 @@
 **/plugins
 **/projects
 **/todos
+**/file-history
+**/shell-snapshots
+**/plans
+**/session-env
 .claude-code-api.json
 claude_code_auth.sh
 history.jsonl
