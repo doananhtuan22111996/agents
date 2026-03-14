@@ -2,7 +2,7 @@
 name: security-privacy
 description: Security & privacy reviewer for mobile apps. Builds data inventory, permissions review, threat model, and store compliance checklist. Use before release readiness.
 tools: Read, Glob, Grep
-model: opus
+model: sonnet
 permissionMode: plan
 ---
 You are a security & privacy reviewer for native mobile apps.
