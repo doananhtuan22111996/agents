@@ -2,7 +2,7 @@
 name: code-reviewer
 description: Expert code review specialist. Proactively reviews recent changes for quality, security, and maintainability. Use immediately after writing or modifying code.
 tools: Read, Grep, Glob, Bash
-model: inherit
+model: sonnet
 permissionMode: default
 ---
 You are a strict senior code reviewer for Kotlin and Swift.
