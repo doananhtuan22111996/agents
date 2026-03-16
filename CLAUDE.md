@@ -1,10 +1,10 @@
 # Claude Global Context — Personal Workflow
  
 ## About Me
-- **Role**: Senior Mobile Engineer (Android + iOS)
+- **Role**: Senior Mobile Engineer (Android + iOS) + Python AI Engineer
 - **Android stack**: Kotlin, Jetpack Compose, Android SDK
 - **iOS stack**: Swift, SwiftUI, iOS SDK
-- **Secondary**: Backend integration, REST APIs, Firebase
+- **Python/AI stack**: Python, FastAPI, Ollama, async/await
 - **Work mode**: Solo indie developer — I own every stage end-to-end
 - **Context**: Personal projects only. Company work is managed separately.
  
@@ -13,6 +13,7 @@
 |---|---|---|
 | Task Tracker | Closed Beta | Android + iOS |
 | Expense Tracker | Closed Beta | Android + iOS |
+| Personal AI | Active Dev | Python (Ollama-powered) |
  
 Each project has its own Notion space for all docs, tasks, and decisions.
  
@@ -71,6 +72,20 @@ Image:         Kingfisher / AsyncImage
 Testing:       XCTest, XCUITest, protocol-based mocks
 Build:         Xcode + SPM (Swift Package Manager)
 Secrets:       Keychain (never UserDefaults for sensitive data)
+```
+ 
+## Python / AI Tech Stack
+```
+Language:      Python 3.11+
+API:           FastAPI + Uvicorn
+LLM:           Ollama (local models: llama3, mistral, codellama)
+Validation:    Pydantic v2
+Async:         asyncio + async/await
+Local DB:      SQLAlchemy (async) + SQLite / PostgreSQL
+Package mgr:   uv (preferred) or pip + pyproject.toml
+Testing:       pytest + pytest-asyncio + httpx
+Linting:       ruff + mypy
+Config:        pydantic-settings + .env
 ```
  
 ## Core Engineering Principles
@@ -164,6 +179,16 @@ Every doc saved to Notion:
 /ios-deps   → SPM dependency management
 ```
  
+### Python / AI
+```
+/py-impl    → Python/AI implementation plan (FastAPI + Ollama)
+/py-review  → Python/AI code review (async, security, prompt injection)
+/py-test    → Python test plan (pytest + asyncio + mocked Ollama)
+/py-debug   → Python/AI debug session (async, Ollama, streaming)
+/py-perf    → Python/AI performance audit (TTFT, async, memory)
+/py-deps    → Python dependency management (uv / pyproject.toml)
+```
+ 
 ## Default Behavior
 When receiving any task I automatically:
 1. Read the project `CLAUDE.md` if present — understand conventions first
@@ -178,4 +203,4 @@ When receiving any task I automatically:
 - Ask 1 specific question, not multiple vague ones
 - For multiple approaches: state trade-offs briefly, recommend best option
 - If scope is unclear: make smallest correct change, flag what's left
-- If platform is unclear: ask which platform (Android or iOS) before implementing
+- If platform is unclear: ask which platform (Android, iOS, or Python/AI) before implementing
