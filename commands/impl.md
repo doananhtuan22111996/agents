@@ -4,64 +4,110 @@ Create an implementation plan for: **$ARGUMENTS**
  
 ## Instructions
  
-Before writing any code, produce a clear implementation plan. This is the thinking phase. Then implement if asked.
+Explore the codebase first. Understand existing patterns before writing a single line. Then produce the plan — implement only when the plan is clear.
  
 ---
  
-## 1. Understand the Requirement
-- What exactly needs to be built?
-- What are the acceptance criteria?
-- What is explicitly out of scope?
+## 1. Requirement Check
+- What exactly needs to be built? (restate concisely)
+- Acceptance criteria from the PRD?
+- What is explicitly out of scope for this task?
  
-## 2. Explore Codebase First
-Identify:
-- Existing patterns in the project that should be followed
-- Files that will need to be created or modified
-- Dependencies already available vs. what needs to be added
-- Potential conflicts with existing code
+## 2. Codebase Exploration
+Before planning, identify:
+- Which existing feature is most similar? Use it as a pattern reference.
+- Which files/classes will be created vs modified?
+- Which Gradle modules are involved? (`:app`, `:data`, `:domain`, `:ui`, etc.)
+- Any existing dependencies that cover this, or new ones needed in `libs.versions.toml`?
+- Any database schema changes needed? (Room migration required?)
  
-## 3. Approach
-Describe the implementation approach in plain language:
-- Architecture layer involvement (UI → ViewModel → UseCase → Repository → DataSource)
-- Data flow: where data comes from, how it transforms, where it ends up
-- State management approach
-- Error handling strategy
+## 3. Architecture Layer Plan
  
-## 4. File Plan
-| Action | File/Class | Purpose |
-|--------|-----------|---------|
-| Create | `feature/X/XViewModel.kt` | Manages UI state for X |
-| Create | `feature/X/XScreen.kt` | Compose UI for X |
-| Modify | `data/repository/XRepository.kt` | Add new method |
-| ... | | |
+Map the work to each layer:
  
-## 5. Key Implementation Steps
-Ordered list of what to build:
-1. Data layer: model, DAO, or API call
-2. Repository: method + interface
-3. Use case / domain logic
-4. ViewModel: state + events
-5. UI: Compose screen + components
-6. Navigation: wire up route
-7. Tests: ViewModel unit tests + any critical logic tests
+```
+UI Layer
+  └── Screen: [XScreen.kt] — Composable, observes ViewModel state
+  └── ViewModel: [XViewModel.kt] — holds UiState, handles UiEvent
+  └── UiState: sealed class or data class
  
-## 6. Edge Cases to Handle
-- Empty state
-- Error state (network, DB, validation)
-- Loading state
-- Offline behavior
-- Configuration changes (rotation, process death)
+Domain Layer
+  └── UseCase: [XUseCase.kt] — single responsibility, pure Kotlin
+  └── Model: [X.kt] — domain model, no Android deps
  
-## 7. Security Checklist for This Feature
-- Any PII or sensitive data involved?
-- Input validation needed?
-- Auth/permission gating needed?
+Data Layer
+  └── Repository interface: [XRepository.kt] in domain
+  └── Repository impl: [XRepositoryImpl.kt] in data
+  └── Remote: [XApiService.kt] — Retrofit interface + DTOs
+  └── Local: [XDao.kt] + [XEntity.kt] — Room
+  └── Mapper: entity/dto → domain model
+```
  
-## 8. Test Plan (brief)
-- What to unit test?
-- What to manually test?
-- Any UI test scenarios?
+## 4. Data Flow
+```
+User action
+  → ViewModel.onEvent(UiEvent)
+    → UseCase.execute(params)
+      → Repository.getData()
+        → Local (Room) or Remote (Retrofit)
+  → UiState updated
+    → Composable recomposes
+```
+ 
+## 5. State Design
+Define the `UiState` shape upfront:
+```kotlin
+data class XUiState(
+    val isLoading: Boolean = false,
+    val items: List<X> = emptyList(),
+    val error: String? = null
+)
+```
+ 
+## 6. File Plan
+| Action | File | Layer | Notes |
+|--------|------|-------|-------|
+| Create | `XViewModel.kt` | UI | |
+| Create | `XScreen.kt` | UI | |
+| Create | `XUseCase.kt` | Domain | |
+| Create | `XRepository.kt` (interface) | Domain | |
+| Create | `XRepositoryImpl.kt` | Data | |
+| Create | `XDao.kt` | Data | Room migration needed? |
+| Modify | `AppModule.kt` | DI | Hilt bindings |
+| Modify | `NavGraph.kt` | Navigation | Add route |
+ 
+## 7. Implementation Order
+1. Domain model + Repository interface
+2. Room entity + DAO (+ migration if schema changed)
+3. Remote DTO + API service (if network involved)
+4. Mapper (entity/DTO → domain)
+5. Repository implementation
+6. Use case
+7. UiState + UiEvent definitions
+8. ViewModel
+9. Composable screen + components
+10. Navigation wiring
+11. Hilt bindings
+12. Unit tests: ViewModel + UseCase
+ 
+## 8. Edge Cases to Handle
+- [ ] Empty state (no data yet)
+- [ ] Loading state (skeleton or spinner)
+- [ ] Error state (network failure, DB failure)
+- [ ] Offline behavior (serve cache, show stale indicator?)
+- [ ] Configuration change (ViewModel survives, UI re-subscribes)
+- [ ] Process death (SavedStateHandle for critical state?)
+ 
+## 9. Security Notes
+- Any PII or sensitive data in this feature?
+- Input from user/Intent that needs validation?
+- Auth/permission gate required?
+ 
+## 10. Quick Test Plan
+- ViewModel: state transitions, error propagation
+- UseCase: business rule correctness
+- Manual: happy path + empty + error + offline
  
 ---
  
-Once the plan is clear, proceed with implementation following the existing project conventions.
+Proceed with implementation in the order above. Follow existing project conventions — check the nearest similar feature first.

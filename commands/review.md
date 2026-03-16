@@ -4,74 +4,82 @@ Review the current code changes (or: $ARGUMENTS) against the full checklist.
  
 ## Instructions
  
-Perform a thorough self-review. Be critical. The goal is to catch issues before a PR is opened. Look at the actual diff or the files involved.
+Run `git diff HEAD` or inspect the specified files. Be critical — the goal is to catch issues before opening a PR.
  
 ---
  
-## Review Checklist
+## ✅ Correctness
+- [ ] Logic is correct for all inputs: empty, null, boundary, concurrent
+- [ ] State is updated atomically where needed (no partial update bugs)
+- [ ] `StateFlow` / `SharedFlow` emissions are correct — no missed events, no hot/cold confusion
+- [ ] `suspend` functions called from the correct coroutine scope and dispatcher
+- [ ] `collect` / `collectLatest` chosen appropriately (cancellation behavior)
+- [ ] No race conditions in async operations
  
-### ✅ Correctness
-- [ ] Logic is correct for all inputs and scenarios
-- [ ] All edge cases handled: empty, null, boundary values, concurrent access
-- [ ] No off-by-one errors, wrong comparisons, or logic inversions
-- [ ] State updates are atomic where needed
-- [ ] Suspend functions / Flows are called from correct coroutine scope
+## 🔒 Security
+- [ ] No tokens, PII, or passwords in logs (`Log.d`, Timber, or Crashlytics)
+- [ ] No sensitive data in error messages or API responses surfaced to the UI
+- [ ] Auth/permission gate in place before accessing protected data or screens
+- [ ] Inputs validated and sanitized before use (especially from deep links / Intents)
+- [ ] No hardcoded API keys or secrets
+- [ ] Sensitive prefs use `EncryptedSharedPreferences`, not plain `SharedPreferences`
+- [ ] Deep link / Intent extras treated as untrusted input
  
-### 🔒 Security
-- [ ] No sensitive data (tokens, PII, passwords) in logs, errors, or analytics
-- [ ] Auth checks in place before accessing protected data/screens
-- [ ] Input validated and sanitized before use
-- [ ] No hardcoded secrets or API keys
-- [ ] Sensitive data uses EncryptedSharedPreferences or equivalent
-- [ ] Deep link / intent data is validated
+## ⚡ Performance
+- [ ] No unnecessary Compose recompositions — `remember`, `derivedStateOf`, stable keys used correctly
+- [ ] `LazyColumn` / `LazyRow` items use stable keys (`key = { item.id }`)
+- [ ] No N+1 Room queries — use JOIN or batch fetch
+- [ ] Heavy work on `Dispatchers.IO`, never on `Main`
+- [ ] No memory leaks: `ViewModel` scope, `lifecycleScope`, no static `Context` refs
+- [ ] Bitmaps and large objects released when no longer needed (Coil handles most, but custom code must too)
+- [ ] No `runBlocking` on the main thread
  
-### ⚡ Performance
-- [ ] No unnecessary recompositions (Compose `remember`, `derivedStateOf` used correctly)
-- [ ] No N+1 database queries
-- [ ] Heavy work off the main thread (IO dispatcher used)
-- [ ] No memory leaks: coroutine scopes tied to lifecycle, no static context refs
-- [ ] Bitmaps / large data not held longer than needed
+## 🛡️ Error Handling
+- [ ] Network errors caught and mapped to UI state (not a crash)
+- [ ] Room/DB errors handled (DAO can throw, wrap in try/catch or `Result`)
+- [ ] Unexpected exceptions caught at ViewModel or repository boundary — not silently swallowed
+- [ ] User sees a meaningful error message, not a raw exception string
+- [ ] Retry / offline fallback logic in place where needed
+- [ ] `Result<T>` or sealed `UiState` used to propagate errors cleanly
  
-### 🛡️ Error Handling
-- [ ] Network errors handled gracefully (not a crash)
-- [ ] DB errors handled gracefully
-- [ ] Unknown/unexpected errors caught and logged (not silently swallowed)
-- [ ] User sees meaningful error messages (not raw stack traces)
-- [ ] Retry logic where appropriate
+## 🧪 Tests
+- [ ] ViewModel state transitions unit-tested with `TestCoroutineDispatcher` / `runTest`
+- [ ] Use case / business logic covered with JUnit + MockK
+- [ ] Flows tested with Turbine (`test { }`)
+- [ ] No untested `!!` force-unwraps on production paths
+- [ ] Tests assert behavior, not implementation details
  
-### 🧪 Testability & Tests
-- [ ] Critical business logic is unit tested
-- [ ] ViewModel state changes tested
-- [ ] Tests are readable and test behavior, not implementation
-- [ ] No untested `!!` force-unwraps in production paths
+## 🧹 Code Quality (Kotlin)
+- [ ] No `!!` without an explicit comment justifying it
+- [ ] `?.let`, `?.run`, `when` used idiomatically — not chained into unreadable nests
+- [ ] No unused variables, imports, or dead code
+- [ ] Extension functions placed in the correct file (not bloating unrelated classes)
+- [ ] No TODO without a linked Notion task
+- [ ] Naming is clear: no `data2`, `temp`, `result2`, `manager2`
  
-### 🧹 Code Quality
-- [ ] Names are clear and self-documenting (no `data2`, `temp`, `stuff`)
-- [ ] Functions are focused and small (single responsibility)
-- [ ] No dead code or commented-out code left behind
-- [ ] No TODO comments without a linked task
-- [ ] Follows existing project conventions (naming, structure, patterns)
+## 🏗️ Architecture
+- [ ] No business logic in `@Composable` functions — belongs in ViewModel or UseCase
+- [ ] No Android types (`Context`, `Intent`, `Resources`) in domain/use-case layer
+- [ ] Repository correctly abstracts data sources (remote vs local)
+- [ ] ViewModel does NOT hold `Context` or `Activity` references
+- [ ] Navigation events emitted as one-shot `Channel` / `SharedFlow`, not `StateFlow`
+- [ ] Single source of truth — UI observes one state, not multiple conflicting sources
  
-### 🏗️ Architecture
-- [ ] Correct layer owns this logic (no business logic in Composables)
-- [ ] No Android dependencies in domain/use-case layer
-- [ ] Repository abstracts data sources correctly
-- [ ] ViewModel doesn't hold Context references
-- [ ] Navigation handled at correct level
- 
-### 📱 Android Specifics
-- [ ] Handles configuration changes correctly (rotation, dark mode, font size)
-- [ ] Works in low-memory / process death scenarios
-- [ ] Permissions requested correctly and handled when denied
-- [ ] Works offline (or degrades gracefully)
-- [ ] Respects system back gesture
+## 📱 Android Platform
+- [ ] Survives configuration change (rotation, dark mode, font scale) — ViewModel saves state
+- [ ] Survives process death — `SavedStateHandle` used for critical transient state
+- [ ] Runtime permissions handled correctly: request → granted/denied → handle denied gracefully
+- [ ] Back gesture / predictive back handled (`BackHandler` if needed)
+- [ ] Works offline or degrades gracefully with a clear message
+- [ ] Tested on API min target, not just latest
  
 ---
  
 ## Summary
-After reviewing, produce:
  
-**Issues Found** (categorized as: 🔴 Must Fix | 🟡 Should Fix | 🟢 Nice to Have):
-- ...
+**Issues Found**
+- 🔴 Must Fix: ...
+- 🟡 Should Fix: ...
+- 🟢 Nice to Have: ...
  
-**Overall Assessment**: Ready to merge | Needs changes | Significant rework needed
+**Overall**: Ready to merge | Needs changes | Significant rework needed
