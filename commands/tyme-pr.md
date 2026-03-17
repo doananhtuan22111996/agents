@@ -35,7 +35,29 @@ Understand:
 
 ---
 
-## Step 3 — Generate Bitbucket PR Description
+## Step 3 — Fetch Default Reviewers from Bitbucket
+
+Use the Bitbucket MCP to get the repo's default reviewers.
+
+First, detect workspace and repo slug from git remote:
+```bash
+git remote get-url origin
+# e.g. git@bitbucket.org:tyme-bank/android-app.git
+# workspace = tyme-bank, repo_slug = android-app
+```
+
+Then fetch default reviewers via Bitbucket MCP:
+```
+GET /2.0/repositories/{workspace}/{repo_slug}/default-reviewers
+```
+
+Extract the list of reviewer display names and account IDs.
+- If reviewers found → include them in the PR reviewers list below
+- If none configured → note "No default reviewers configured" and continue
+
+---
+
+## Step 4 — Generate Bitbucket PR Description
 
 Produce a PR ready to paste into Bitbucket:
 
@@ -43,6 +65,9 @@ Produce a PR ready to paste into Bitbucket:
 
 **Title**: `ONC-{ticketNumber}: <type>: <concise description>`
 Example: `ONC-123: feat: add recurring payment screen`
+
+**Reviewers** *(add these when creating the PR in Bitbucket)*:
+- [Reviewer names from Step 3]
 
 **Description**:
 
@@ -81,7 +106,7 @@ How was this tested?
 
 ---
 
-## Step 4 — Update Jira Ticket
+## Step 5 — Update Jira Ticket
 
 Use the Jira MCP to add a comment to the ticket with implementation notes:
 ```
@@ -107,9 +132,10 @@ Comment format:
 
 ---
 
-## Step 5 — Checklist Before Submitting
+## Step 6 — Checklist Before Submitting
 
-- [ ] PR title follows format: `ONC-XXX: type: description`
+- [ ] PR title follows format: `[ONC-XXXX] description`
+- [ ] Default reviewers added to the PR (from Step 3)
 - [ ] Jira ticket linked in PR description
 - [ ] Jira ticket has implementation comment
 - [ ] Branch is up to date with main/master (`git pull origin main`)
