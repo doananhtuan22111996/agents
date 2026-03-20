@@ -52,3 +52,20 @@ How was this tested? What should the reviewer verify?
  
 **Labels**: (suggest based on type: `feature`, `bug`, `chore`, `refactor`, `docs`)
 **Branch**: `<type>/<short-description>`
+
+---
+
+## Create PR
+
+Once the PR title and body are generated above, create the pull request:
+
+1. Ensure all changes are committed and pushed to the remote branch
+2. Use `gh pr create` to create the PR on GitHub:
+```
+gh pr create --title "<PR Title>" --body "$(cat <<'EOF'
+<PR Body content from above>
+EOF
+)"
+```
+3. If the base branch is not `main`, specify it with `--base <branch>`
+4. Return the PR URL to the user
