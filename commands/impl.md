@@ -169,7 +169,22 @@ Rules:
 
 ---
 
-## 12. Commit & Create PR
+## 12. SwiftLint Check (iOS only)
+
+After implementation is complete and before committing, run SwiftLint to ensure no lint issues:
+
+```bash
+swiftlint lint --strict
+```
+
+- Fix **all** warnings and errors before proceeding
+- If the project uses a `.swiftlint.yml` config, respect those rules
+- Common issues to watch for: line length, force unwrapping, trailing whitespace, unused imports
+- Run again after fixes to confirm a clean report
+
+---
+
+## 13. Commit & Create PR
 
 ### Step 1 — Stage and commit
 ```bash
