@@ -14,3 +14,10 @@ history.jsonl
 settings.json
 settings.local.json
 stats-cache.json
+**/backups
+**/ide
+**/sessions
+**/tasks
+mcp-needs-auth-cache.json
+policy-limits.json
+setup-claude.sh
