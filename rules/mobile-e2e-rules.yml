@@ -1,0 +1,431 @@
+# Mobile E2E Testing Specific Rules
+# These rules are specific to mobile end-to-end automation testing
+# Extends common-rules.yml and language-specific rules
+
+# Mobile locator strategies and patterns
+mobile_locator_patterns:
+  enabled: true
+  rules:
+    - id: mixed_locator_pattern
+      severity: critical
+      description: "Use bank-specific mixed locator pattern with appropriate bank prefix"
+      
+      # Supported bank-specific patterns - Add new banks here as needed
+      supported_banks:
+        ph: # Philippines
+          name: "Philippines"
+          pattern: 'ph\s*\(\s*AppiumBy\.\w+\([^)]*\),\s*AppiumBy\.\w+\([^)]*\)\s*\)'
+          currency_symbol: "₱"
+          description: "Use ph() for Philippines-specific functionality"
+        sa: # South Africa
+          name: "South Africa"
+          pattern: 'sa\s*\(\s*AppiumBy\.\w+\([^)]*\),\s*AppiumBy\.\w+\([^)]*\)\s*\)'
+          currency_symbol: "R"
+          description: "Use sa() for South Africa-specific functionality"
+        # Future banks can be added here following the same pattern:
+        # slsa:  # Salam South Africa (example)
+        #   name: "Salam South Africa"
+        #   pattern: 'slsa\s*\(\s*AppiumBy\.\w+\([^)]*\),\s*AppiumBy\.\w+\([^)]*\)\s*\)'
+        #   currency_symbol: "R"
+        #   description: "Use slsa() for Salam South Africa-specific functionality"
+        # vn:  # Vietnam (example)
+        #   name: "Vietnam"
+        #   pattern: 'vn\s*\(\s*AppiumBy\.\w+\([^)]*\),\s*AppiumBy\.\w+\([^)]*\)\s*\)'
+        #   currency_symbol: "VND"
+        #   description: "Use vn() for Vietnam-specific functionality"
+      
+      validation_rules:
+        - "Use appropriate bank prefix for the specific market functionality"
+        - "First parameter must be Android-compatible locator"
+        - "Second parameter must be iOS-compatible locator"
+        - "Do not mix different bank patterns within the same functionality"
+        - "Choose bank pattern based on target market, not arbitrary preference"
+        - "CRITICAL: Do NOT change sa() to ph() or vice versa - they are bank-specific"
+        - "sa() is for South Africa market - ph() is for Philippines market"
+        - "Bank pattern choice depends on business functionality, not folder structure"
+        - "Folder names like /sa/ or /ph/ do NOT determine which bank pattern to use"
+        - "Only flag as violation if there's clear evidence of wrong bank pattern for intended functionality"
+        - "When in doubt about bank pattern correctness, do NOT flag as violation"
+
+      common_pattern_structure: |
+        {bank_prefix}(
+            AppiumBy.{android_locator_type}({android_locator_value}),
+            AppiumBy.{ios_locator_type}({ios_locator_value})
+        ).asDefault()
+      
+      examples:
+        correct_philippines: |
+          private val MAXIMUM_AMOUNT = setLocator {
+              ph(
+                  AppiumBy.id("$ANDROID_APP_PACKAGE:id/tv_max_amount"),
+                  AppiumBy.accessibilityId("Max: ₱ 20,000.00")
+              ).asDefault()
+          }
+        correct_south_africa: |
+          private val ACCOUNT_NAME_CLOSED = setLocator {
+              sa(
+                  AppiumBy.xpath("(//android.widget.TextView[@text='Closed accounts']//android.widget.TextView)[1]"),
+                  AppiumBy.xpath("(//XCUIElementTypeCell//XCUIElementTypeStaticText)[position()=1]")
+              ).asDefault()
+          }
+        # Example for future bank - Sanlam South Africa
+        correct_future_bank_example: |
+          private val BALANCE_AMOUNT = setLocator {
+              slsa(
+                  AppiumBy.id("$ANDROID_APP_PACKAGE:id/balance_text"),
+                  AppiumBy.accessibilityId("Balance: Rs 10,000.00")
+              ).asDefault()
+          }
+        # Example for mix bank locator - ph + sa
+        correct_mixed_banks: |
+          private val ELEMENT = setLocator {
+              ph( 
+                  AppiumBy.xpath("//android.widget.TextView[@text='Closed accounts']"),
+                  AppiumBy.xpath("//XCUIElementTypeStaticText[@label='Closed accounts']")
+              ).asDefault()
+          
+              sa(
+                  AppiumBy.xpath("(//android.widget.TextView[@text='Closed accounts']//android.widget.TextView)[1]"),
+                  AppiumBy.xpath("(//XCUIElementTypeCell//XCUIElementTypeStaticText)[position()=1]")
+              )
+          }
+
+        incorrect_mixed_banks: |
+          private val ELEMENT = setLocator {
+              ph( 
+                  AppiumBy.xpath("//android.widget.TextView[@text='Closed accounts']"),
+                  AppiumBy.xpath("//XCUIElementTypeStaticText[@label='Closed accounts']")
+              ).asDefault()
+
+              ph(
+                  AppiumBy.xpath("(//android.widget.TextView[@text='Closed accounts']//android.widget.TextView)[1]"),
+                  AppiumBy.xpath("(//XCUIElementTypeCell//XCUIElementTypeStaticText)[position()=1]")
+              )
+          }
+
+        incorrect_parameter_order: |
+          private val ELEMENT = setLocator {
+              sa(
+                  AppiumBy.iOSNsPredicateString("name == 'ios-element'"),  // Wrong - iOS locator first
+                  AppiumBy.id("$ANDROID_APP_PACKAGE:id/element")         // Wrong - Android locator second
+              ).asDefault()
+          }
+
+    - id: locator_priority
+      severity: critical
+      description: "Follow locator priority for iOS and Android platforms in mixed locator pattern"
+      scoring:
+        ios:
+          accessibility_id: 100
+          id: 100
+          ios_ns_predicate_string: 100
+          ios_class_chain: 100
+          xpath: 20  # Only when absolutely necessary
+        android:
+          accessibility_id: 100
+          id: 100
+          xpath: 50  # Lower priority but acceptable
+      patterns:
+        mixed_locator_structure:
+          # Dynamic pattern matching - supports any bank prefix that follows the structure
+          general_bank_pattern: '(ph|sa|slsa|vn)\s*\(\s*AppiumBy\.\w+\([^)]*\),\s*AppiumBy\.\w+\([^)]*\)\s*\)'
+          valid_patterns:
+            philippines: 'ph\s*\(\s*AppiumBy\.\w+\([^)]*\),\s*AppiumBy\.\w+\([^)]*\)\s*\)'
+            south_africa: 'sa\s*\(\s*AppiumBy\.\w+\([^)]*\),\s*AppiumBy\.\w+\([^)]*\)\s*\)'
+            # Future bank patterns will be auto-supported by general_bank_pattern
+          android_first_param: true  # First parameter is Android locator
+          ios_second_param: true     # Second parameter is iOS locator
+        android_locators:
+          preferred:
+            - 'AppiumBy\.accessibilityId\('
+            - 'AppiumBy\.id\('
+          acceptable:
+            - 'AppiumBy\.xpath\('
+        ios_locators:
+          preferred:
+            - 'AppiumBy\.accessibilityId\('
+            - 'AppiumBy\.id\('
+            - 'AppiumBy\.iOSNsPredicateString\('
+            - 'AppiumBy\.iOSClassChain\('
+          acceptable:
+            - 'AppiumBy\.name\('
+          restricted:
+            - 'AppiumBy\.xpath\('  # Only when absolutely necessary
+      validation_rules:
+        - "First parameter in ph() must be Android-compatible locator"
+        - "Second parameter in ph() must be iOS-compatible locator"
+        - "Android locators should prefer id > accessibilityId > xpath"
+        - "iOS locators should prefer accessibilityId > id > iOSNsPredicateString > iOSClassChain > xpath"
+        - "Avoid xpath for iOS unless absolutely necessary"
+      best_practices:
+        - "Always use bank-specific mixed locator pattern: ph() for Philippines, sa() for South Africa, etc"
+        - "First parameter = Android locator (id, accessibilityId, xpath)"
+        - "Second parameter = iOS locator (accessibilityId, id, iOSNsPredicateString, iOSClassChain)"
+        - "Prefer id and accessibilityId over xpath for both platforms"
+        - "Only use xpath for iOS when there is absolutely no alternative"
+        - "Do not mix ph() and sa() patterns within the same functionality"
+
+# Mobile testing verification methods
+mobile_verification:
+  enabled: true
+  rules:
+    - id: verification_methods
+      severity: major
+      description: "Use verify... methods instead of Assert.xxx for mobile E2E tests"
+      preferred_patterns:
+        - 'verify\w+'
+        - 'verifyTrue'
+        - 'verifyFalse'
+        - 'verifyEquals'
+        - 'verifyTextEqual'
+        - 'verifyElementNotPresent'
+        - 'verifyElementPresent'
+        - 'verifyElementTextContains'
+        - 'verifyElementText'
+        - 'verifyElementDisplayed'
+        - 'verifyElementNotDisplayed'
+        - 'verifyElementNotDisplay'
+      forbidden_patterns:
+        - 'Assert\.'
+        - 'Assert\.assertTrue'
+        - 'Assert\.assertFalse'
+        - 'Assert\.assertEquals'
+        - 'Assert\.assertNotEquals'
+        - 'Assert\.assertNull'
+        - 'Assert\.assertNotNull'
+        - 'Assert\.fail'
+      best_practices:
+        - "Use verify methods for soft assertions in mobile E2E tests"
+        - "verify methods allow test execution to continue after failure"
+        - "Assert methods stop test execution immediately on failure"
+        - "Use verify for validation, Assert only for critical preconditions"
+      examples:
+        correct: |
+          verifyTrue(loginButton.isDisplayed())
+          verifyEquals(actualText, expectedText)
+        incorrect: |
+          Assert.assertTrue(loginButton.isDisplayed())
+          Assert.assertEquals(actualText, expectedText)
+
+# Mobile testing wait strategies
+mobile_wait_strategies:
+  enabled: true
+  rules:
+    - id: explicit_waits
+      severity: minor
+      description: "Use explicit waits instead of Thread.sleep"
+      forbidden_patterns:
+        - 'Thread\.sleep'
+        - 'sleep\('
+      preferred_patterns:
+        - 'waitForElement'
+        - 'waitUntilVisible'
+        - 'waitUntilClickable'
+      best_practices:
+        - "Use framework-specific wait methods"
+        - "Avoid hard-coded Thread.sleep calls"
+        - "Implement dynamic waits based on element states"
+
+# Step definition implementation for mobile E2E
+step_definition_implementation:
+  enabled: true
+  rules:
+    - id: step_definition_logic
+      severity: major
+      description: "Step definitions must have logic inside, not be empty"
+      patterns:
+        kotlin:
+          step_annotations:
+            - '@Given\('
+            - '@When\('
+            - '@Then\('
+            - '@And\('
+            - '@But\('
+          required_content:
+            - '\w+\.\w+'  # Method calls
+            - 'if\s*\('   # Conditional logic
+            - 'for\s*\('  # Loop logic
+            - 'try\s*\{'  # Exception handling
+            - 'return'    # Return statements
+            - '=\s*\w+'   # Variable assignments
+        java:
+          step_annotations:
+            - '@Given\('
+            - '@When\('
+            - '@Then\('
+            - '@And\('
+            - '@But\('
+          required_content:
+            - '\w+\.\w+'  # Method calls
+            - 'if\s*\('   # Conditional logic
+            - 'for\s*\('  # Loop logic
+            - 'try\s*\{'  # Exception handling
+            - 'return'    # Return statements
+            - '=\s*\w+'   # Variable assignments
+      forbidden_patterns:
+        - '@Given\([^)]+\)\s*public\s+void\s+\w+\([^)]*\)\s*\{\s*\}'  # Empty Given
+        - '@When\([^)]+\)\s*public\s+void\s+\w+\([^)]*\)\s*\{\s*\}'   # Empty When
+        - '@Then\([^)]+\)\s*public\s+void\s+\w+\([^)]*\)\s*\{\s*\}'   # Empty Then
+        - '@Given\([^)]+\)\s*fun\s+\w+\([^)]*\)\s*\{\s*\}'            # Empty Given Kotlin
+        - '@When\([^)]+\)\s*fun\s+\w+\([^)]*\)\s*\{\s*\}'             # Empty When Kotlin
+        - '@Then\([^)]+\)\s*fun\s+\w+\([^)]*\)\s*\{\s*\}'             # Empty Then Kotlin
+        - '//\s*TODO'  # TODO comments without implementation
+        - 'throw\s+new\s+PendingException'  # Pending exceptions
+      best_practices:
+        - "Step definitions should contain meaningful logic"
+        - "Avoid empty step definitions or placeholder implementations"
+        - "Each step should perform specific actions or validations"
+        - "Remove TODO comments and implement actual logic"
+        - "Use descriptive method calls and variable names"
+      examples:
+        correct: |
+          @Given("Customer is on the login page")
+          fun customerIsOnLoginPage() {
+              try {
+                  loginPage.navigateToPage()
+                  verifyTrue(loginPage.isDisplayed())
+                  logger.info("Customer successfully navigated to login page")
+              } catch (e: Exception) {
+                  logger.error("Failed to navigate to login page", e)
+                  throw e
+              }
+          }
+        incorrect: |
+          @Given("Customer is on the login page")
+          fun customerIsOnLoginPage() {
+              // TODO: Implement this step
+          }
+
+# Page Object Model patterns for mobile
+page_object_patterns:
+  enabled: true
+  rules:
+    - id: page_object_naming
+      severity: major
+      description: "Follow Page Object Model pattern with proper naming"
+      required_patterns:
+        - 'Page$|Screen$|Component$'  # Class names should end with Page/Screen/Component
+      examples:
+        correct: [ "LoginPage", "DashboardScreen", "HeaderComponent" ]
+        incorrect: [ "Login", "Dashboard", "Header" ]
+
+    - id: locator_organization
+      severity: minor
+      description: "Organize locators at class level using setLocator pattern"
+      pattern: 'private\s+val\s+\w+\s*=\s*setLocator\s*\{'
+      best_practices:
+        - "Define locators as private val properties"
+        - "Use descriptive names for locator variables"
+        - "Group related locators together"
+        - "Use setLocator pattern for cross-platform compatibility"
+
+# GotymeX specific business rules
+gotymex_standards:
+  enabled: true
+  rules:
+    - id: data_driven_approach
+      severity: minor
+      description: "Use data providers for multiple test scenarios"
+      patterns:
+        - '@TestData'
+      best_practices:
+        - "Externalize test data when possible"
+        - "Use data providers for parameterized tests"
+        - "Separate test data from test logic"
+
+# Mobile automation best practices
+mobile_best_practices:
+  enabled: true
+  rules:
+    - id: element_interaction_safety
+      severity: major
+      description: "Ensure elements are interactable before interaction"
+      required_checks:
+        - "Element is present"
+        - "Element is visible"
+        - "Element is clickable (for click actions)"
+      example: |
+        fun clickElement(locator: By) {
+            val element = waitForElement(locator)
+            waitUntilVisible(element)
+            waitUntilClickable(element)
+            element.click()
+        }
+
+    - id: cross_platform_compatibility
+      severity: major
+      description: "Ensure code works across Android and iOS platforms"
+      validation_rules:
+        - "Use mixed locator patterns for cross-platform elements"
+        - "Handle platform-specific behaviors gracefully"
+        - "Test critical paths on both platforms"
+
+    - id: device_specific_handling
+      severity: minor
+      description: "Handle device-specific variations appropriately"
+      considerations:
+        - "Screen size differences"
+        - "OS version variations"
+        - "Device-specific UI elements"
+
+# Error handling for mobile automation
+mobile_error_handling:
+  enabled: true
+  rules:
+    - id: mobile_exception_handling
+      severity: major
+      description: "Handle mobile-specific exceptions properly"
+      mobile_exceptions:
+        - "ElementNotVisibleException"
+        - "ElementNotInteractableException"
+        - "TimeoutException"
+        - "NoSuchElementException"
+        - "StaleElementReferenceException"
+      best_practices:
+        - "Catch specific mobile automation exceptions"
+        - "Implement retry mechanisms for flaky elements"
+        - "Log detailed error information for debugging"
+        - "Provide meaningful error messages for test failures"
+
+# Tool integration for mobile E2E
+tool_integration:
+  appium_settings:
+    - "Configure appropriate capabilities for each platform"
+    - "Use latest stable Appium version"
+    - "Set appropriate timeouts and wait strategies"
+  
+  device_management:
+    - "Support both real devices and simulators/emulators"
+    - "Configure device-specific settings appropriately"
+    - "Handle device orientation changes"
+  
+  reporting:
+    - "Capture screenshots on test failures"
+    - "Include device and platform information in reports"
+    - "Log detailed test execution information"
+
+# File extensions that this rule set applies to
+file_extensions:
+  - ".kt"
+  - ".java"
+  - ".feature"
+
+# Integration with other rule sets
+integration:
+  inherit_from:
+    - "common-rules.yml"
+    - "kotlin-rules.yml"
+    - "java-rules.yml"
+    - "cucumber-rules.yml"
+  mobile_e2e_specific: true
+  override_severity: false
+
+# Exemptions specific to mobile E2E testing
+exemptions:
+  mobile_specific_exemptions:
+    - rule_id: "method_length"
+      files: [ "*Steps.kt", "*Steps.java" ]
+      reason: "Step definition methods may be longer due to complex mobile interactions"
+    - rule_id: "class_length"
+      files: [ "*Page.kt", "*Screen.kt" ]
+      reason: "Page objects may have many locators and methods for complex screens"

@@ -1,0 +1,337 @@
+# Enhanced Strategy Locator Rules for Mobile Test Automation
+# This file contains the comprehensive locator strategies and prioritization rules
+# with project-specific patterns for GoTyme mobile automation framework
+
+# bank Detection Rules
+bank_detection:
+  file_naming_patterns:
+    PH_Android: 
+      bank: ph
+      platform: android
+      position: 1
+      locks: ["sa"]
+    PH_iOS:
+      bank: ph
+      platform: ios  
+      position: 2
+      locks: ["sa"]
+    SA_Android:
+      bank: sa
+      platform: android
+      position: 1
+      locks: ["ph"]
+    SA_iOS:
+      bank: sa
+      platform: ios
+      position: 2
+      locks: ["ph"]
+
+# 🤖 Enhanced Android Locator Priority Strategy
+android_locator_priority:
+  P1: 
+    priority: "🥇 P1"
+    strategy: "Accessibility ID (content-desc)"
+    implementation: "AppiumBy.accessibilityId()"
+    xml_source: "content-desc"
+    description: "Highest priority - uses content-desc attribute for accessibility"
+    examples:
+      - "AppiumBy.accessibilityId('element_name')"
+      - "AppiumBy.accessibilityId('buttonDock')"
+      - "AppiumBy.accessibilityId('loginButton')"
+    detection_pattern: 'content-desc="([^"]*)"'
+    usage_notes: "Always prioritize when content-desc attribute is available in XML"
+    
+  P2:
+    priority: "🥈 P2"
+    strategy: "Resource ID with Project Patterns"
+    implementation: "AppiumBy.id()"
+    xml_source: "resource-id"
+    description: "Project-specific resource ID patterns with GoTyme naming conventions"
+    examples:
+      - "AppiumBy.id(String.format(GENERIC_ANDROID_XPATH_ID, \"element_id\"))"
+      - "AppiumBy.id(\"ph.com.gotyme.uat:id/element_name\")"
+      - "AppiumBy.id(\"ph.com.gotyme.sit:id/btn_verify\")"
+      - "AppiumBy.id(\"ph.com.gotyme.uat:id/tv_title\")"
+    detection_pattern: 'resource-id="([^"]*)"'
+    project_patterns:
+      - "ph.com.gotyme.uat:id/*"
+      - "ph.com.gotyme.sit:id/*" 
+      - "ph.com.gotyme.prod:id/*"
+    extraction_pattern: ".*:id/([^'\"]+)"
+    usage_notes: "Use direct resource-id when content-desc not available"
+    
+  P3:
+    priority: "🥉 P3"
+    strategy: "XPath by Text with Project Patterns"
+    implementation: "AppiumBy.xpath()"
+    xml_source: "text"
+    description: "Text-based XPath with GoTyme project predefined patterns"
+    examples:
+      - "AppiumBy.xpath(GENERIC_ANDROID_XPATH_TEXT_VIEW.format(\"Element Text\"))"
+      - "AppiumBy.xpath(GENERIC_ANDROID_XPATH_TEXT_VIEW_CONTAIN.format(\"Partial Text\"))"
+      - "AppiumBy.xpath(\"//android.widget.TextView[@text='Login']\")"
+      - "AppiumBy.xpath(\"//android.widget.Button[@text='Verify with OTP']\")"
+    detection_pattern: 'text="([^"]*)"'
+    project_patterns:
+      GENERIC_ANDROID_XPATH_TEXT_VIEW: "//android.widget.TextView[@text='{}']"
+      GENERIC_ANDROID_XPATH_TEXT_VIEW_CONTAIN: "//android.widget.TextView[contains(@text,'{}')]"
+      GENERIC_ANDROID_XPATH_BUTTON: "//android.widget.Button[@text='{}']"
+      GENERIC_ANDROID_XPATH_EDITTEXT: "//android.widget.EditText[@text='{}']"
+    usage_notes: "Use when accessibility attributes unavailable, combine with OR conditions"
+    
+  P4:
+    priority: "4️⃣ P4"
+    strategy: "Compound XPath (Multiple Attributes)"
+    implementation: "AppiumBy.xpath()"
+    xml_source: "multiple"
+    description: "Complex XPath with multiple attribute conditions for precision"
+    examples:
+      - "AppiumBy.xpath(\"//android.widget.Button[@content-desc='login' and @enabled='true']\")"
+      - "AppiumBy.xpath(\"//android.widget.TextView[@resource-id='ph.com.gotyme.sit:id/title']\")"
+      - "AppiumBy.xpath(\"//android.widget.EditText[@resource-id='ph.com.gotyme.uat:id/input' and @enabled='true']\")"
+      - "AppiumBy.xpath(\"//android.view.View[@content-desc='buttonDock']//android.view.View[1]\")"
+    compound_patterns:
+      resource_id_and_enabled: "//{}[@resource-id='{}' and @enabled='true']"
+      content_desc_and_class: "//{}[@content-desc='{}' and @class='{}']"
+      text_and_enabled: "//{}[@text='{}' and @enabled='true']"
+    usage_notes: "Last resort when simpler locators fail, use for complex element identification"
+
+# 🍎 Enhanced iOS Locator Priority Strategy  
+ios_locator_priority:
+  P1:
+    priority: "🥇 P1"
+    strategy: "Accessibility ID (name attribute)"
+    implementation: "AppiumBy.accessibilityId()"
+    xml_source: "name"
+    description: "Highest priority - uses name attribute for iOS accessibility"
+    examples:
+      - "AppiumBy.accessibilityId('element_name')"
+      - "AppiumBy.accessibilityId('loginButton')"
+      - "AppiumBy.accessibilityId('buttonDock')"
+    detection_pattern: 'name="([^"]*)"'
+    usage_notes: "Always prioritize when name attribute is available in iOS XML"
+    
+  P2:
+    priority: "🥈 P2"
+    strategy: "iOS NSPredicate (Multiple Conditions)"
+    implementation: "AppiumBy.iOSNsPredicateString()"
+    xml_source: "multiple"
+    description: "Advanced iOS predicate strings with multiple condition support"
+    examples:
+      - "AppiumBy.iOSNsPredicateString(\"name == 'Element' OR label == 'Element'\")"
+      - "AppiumBy.iOSNsPredicateString(\"type == 'XCUIElementTypeButton' AND label CONTAINS 'Login'\")"
+      - "AppiumBy.iOSNsPredicateString(\"name == 'buttonDock' OR identifier == 'buttonDock'\")"
+      - "AppiumBy.iOSNsPredicateString(\"label BEGINSWITH 'Enter your' OR label CONTAINS 'Phone'\")"
+    predicate_patterns:
+      name_or_label: "name == '{}' OR label == '{}'"
+      type_and_label_contains: "type == '{}' AND label CONTAINS '{}'"
+      multiple_text_options: "label == '{}' OR label == '{}' OR label == '{}'"
+      begins_with_contains: "label BEGINSWITH '{}' OR label CONTAINS '{}'"
+    usage_notes: "Use for complex conditions and multiple fallback options"
+    
+  P3:
+    priority: "🥉 P3"
+    strategy: "iOS Class Chain (Type with Conditions)"
+    implementation: "AppiumBy.iOSClassChain()"
+    xml_source: "type_and_attributes"
+    description: "iOS class chain for hierarchical element selection with conditions"
+    examples:
+      - "AppiumBy.iOSClassChain(\"**/XCUIElementTypeButton[`name == \\\"Button Name\\\"`]\")"
+      - "AppiumBy.iOSClassChain(\"**/XCUIElementTypeNavigationBar/XCUIElementTypeButton[1]\")"
+      - "AppiumBy.iOSClassChain(\"**/XCUIElementTypeTextField[`value == \\\"Enter text\\\"`]\")"
+      - "AppiumBy.iOSClassChain(\"**/XCUIElementTypeStaticText[`label CONTAINS \\\"Login\\\"`]\")"
+    class_chain_patterns:
+      button_by_name: "**/XCUIElementTypeButton[`name == \\\"{}\\\"`]"
+      navigation_button: "**/XCUIElementTypeNavigationBar/XCUIElementTypeButton[{}]"
+      textfield_by_value: "**/XCUIElementTypeTextField[`value == \\\"{}\\\"`]"
+      static_text_contains: "**/XCUIElementTypeStaticText[`label CONTAINS \\\"{}\\\"`]"
+    usage_notes: "Use for hierarchical navigation and specific element type targeting"
+    
+  P4:
+    priority: "4️⃣ P4"
+    strategy: "XPath by Predefined Patterns"
+    implementation: "AppiumBy.xpath()"
+    xml_source: "various"
+    description: "XPath with GoTyme project predefined iOS patterns"
+    examples:
+      - "AppiumBy.xpath(GENERIC_IOS_XPATH_BUTTON_BY_NAME.format(\"Button Text\"))"
+      - "AppiumBy.xpath(\"//XCUIElementTypeButton[@name='Button Name']\")"
+      - "AppiumBy.xpath(\"//XCUIElementTypeStaticText[@label='Text Content']\")"
+      - "AppiumBy.xpath(\"//XCUIElementTypeTextField[@value='Input Value']\")"
+    project_patterns:
+      GENERIC_IOS_XPATH_BUTTON_BY_NAME: "//XCUIElementTypeButton[@name='{}']"
+      GENERIC_IOS_XPATH_STATIC_TEXT: "//XCUIElementTypeStaticText[@label='{}']"
+      GENERIC_IOS_XPATH_TEXTFIELD: "//XCUIElementTypeTextField[@value='{}']"
+      GENERIC_IOS_XPATH_BUTTON_CONTAINS: "//XCUIElementTypeButton[contains(@name,'{}')]"
+    usage_notes: "Last resort when accessibility and predicate options unavailable"
+
+# Enhanced XML Analysis Rules
+xml_analysis:
+  actionable_elements:
+    android:
+      - "android.widget.TextView"
+      - "android.widget.Button" 
+      - "android.widget.EditText"
+      - "android.widget.ImageView"
+      - "android.widget.ImageButton"
+      - "android.view.View"
+      - "android.widget.LinearLayout"
+      - "android.widget.RelativeLayout"
+      - "android.widget.FrameLayout"
+    ios:
+      - "XCUIElementTypeButton"
+      - "XCUIElementTypeTextField"
+      - "XCUIElementTypeStaticText"
+      - "XCUIElementTypeSecureTextField"
+      - "XCUIElementTypeImage"
+      - "XCUIElementTypeCell"
+      - "XCUIElementTypeNavigationBar"
+      - "XCUIElementTypeToolbar"
+    
+  priority_attributes:
+    android:
+      P1: "content-desc"
+      P2: "resource-id"
+      P3: "text" 
+      P4: "class"
+      additional: ["enabled", "clickable", "checkable", "checked"]
+    ios:
+      P1: "name"
+      P2: "label"
+      P3: "type"
+      P4: "value"
+      additional: ["enabled", "visible", "identifier"]
+
+# Enhanced Bank Lock Enforcement
+enforcement_rules:
+  single_bank_only:
+    rule: "NEVER update both ph() and sa() Banks simultaneously"
+    violation: "ABSOLUTE FORBIDDEN"
+    enforcement_level: "CRITICAL"
+    
+  single_platform_only:
+    rule: "NEVER update both Android and iOS platforms simultaneously"
+    violation: "ABSOLUTE FORBIDDEN" 
+    enforcement_level: "CRITICAL"
+    exception: "Only when adding complete missing bank (both platforms required)"
+    
+  preserve_working_platform:
+    rule: "Keep working platform code exactly as-is"
+    action: "preserve_original"
+    enforcement_level: "HIGH"
+    
+  lock_other_banks:
+    rule: "Keep all other banks completely unchanged"
+    action: "complete_lock"
+    enforcement_level: "CRITICAL"
+
+# Enhanced Missing Bank Handling
+missing_bank_rules:
+  detection:
+    pattern: "XML file indicates bank X but Kotlin file only contains bank Y"
+    action: "ADD missing bank with healing XML content"
+    preservation: "PRESERVE existing banks 100% unchanged"
+    
+  addition_strategy:
+    complete_bank: "Add both Android and iOS locators for missing bank"
+    content_source: "Use healing XML content for new locators"
+    existing_preservation: "Keep existing banks exactly as original"
+    priority_focus: "Focus on detected platform position while providing complete coverage"
+
+# Enhanced Locator Generation Templates
+locator_templates:
+  android:
+    accessibility_id: "AppiumBy.accessibilityId('{value}')"
+    resource_id_direct: "AppiumBy.id('{full_resource_id}')"
+    resource_id_generic: "AppiumBy.id(String.format(GENERIC_ANDROID_XPATH_ID, \"{element_id}\"))"
+    xpath_text_view: "AppiumBy.xpath(GENERIC_ANDROID_XPATH_TEXT_VIEW.format(\"{text_value}\"))"
+    xpath_text_contains: "AppiumBy.xpath(GENERIC_ANDROID_XPATH_TEXT_VIEW_CONTAIN.format(\"{partial_text}\"))"
+    xpath_compound_or: "AppiumBy.xpath('//android.widget.TextView[@text=\"{text1}\" or @text=\"{text2}\" or @text=\"{text3}\"]')"
+    
+  ios:
+    accessibility_id: "AppiumBy.accessibilityId('{value}')"
+    nspredicate_or: "AppiumBy.iOSNsPredicateString('name == \"{value1}\" OR label == \"{value2}\"')"
+    nspredicate_contains: "AppiumBy.iOSNsPredicateString('label CONTAINS \"{partial_text}\"')"
+    class_chain_button: "AppiumBy.iOSClassChain('**/XCUIElementTypeButton[`name == \\\"{button_name}\\\"`]')"
+    xpath_button: "AppiumBy.xpath(GENERIC_IOS_XPATH_BUTTON_BY_NAME.format(\"{button_text}\"))"
+    xpath_static_text: "AppiumBy.xpath('//XCUIElementTypeStaticText[@label=\"{text_value}\"]')"
+
+# Project-Specific Constants
+project_constants:
+  android:
+    package_patterns:
+      uat: "ph.com.gotyme.uat:id/"
+      sit: "ph.com.gotyme.sit:id/" 
+      prod: "ph.com.gotyme.prod:id/"
+    
+    xpath_constants:
+      GENERIC_ANDROID_XPATH_ID: "//android.widget.*[@resource-id='ph.com.gotyme.uat:id/%s']"
+      GENERIC_ANDROID_XPATH_TEXT_VIEW: "//android.widget.TextView[@text='%s']"
+      GENERIC_ANDROID_XPATH_TEXT_VIEW_CONTAIN: "//android.widget.TextView[contains(@text,'%s')]"
+      GENERIC_ANDROID_XPATH_BUTTON: "//android.widget.Button[@text='%s']"
+      
+  ios:
+    xpath_constants:
+      GENERIC_IOS_XPATH_BUTTON_BY_NAME: "//XCUIElementTypeButton[@name='%s']"
+      GENERIC_IOS_XPATH_STATIC_TEXT: "//XCUIElementTypeStaticText[@label='%s']"
+      GENERIC_IOS_XPATH_TEXTFIELD: "//XCUIElementTypeTextField[@value='%s']"
+
+# Enhanced Validation Requirements
+validation_requirements:
+  pre_update_checks:
+    - "Only ONE bank section being modified/added"
+    - "Only ONE platform position being modified (except missing bank additions)"
+    - "Target bank matches XML file pattern exactly"
+    - "Target platform matches XML file pattern exactly"
+    - "All existing banks remain unchanged"
+    - "Healing XML analysis performed line-by-line"
+    - "Changed elements extracted from healing file"
+    - "New locators based on actual healing XML content"
+    - "Priority strategy applied (P1-P4 order)"
+    - "Project patterns used when applicable"
+    
+  post_update_validation:
+    - "No XML file modifications suggested"
+    - "Single responsibility: ONE change, everything else locked"
+    - "Cross-platform compatibility maintained"
+    - "Accessibility ID prioritized when available (P1)"
+    - "Resource ID used appropriately (P2)"
+    - "XPath used only when necessary (P3-P4)"
+    - "Project-specific patterns applied"
+    - "OR conditions include original + healing + variations"
+    - "Valid Kotlin syntax generated"
+    - "Proper AppiumBy method calls used"
+  
+  simultaneous_updates:
+    - "Both ph() and sa() banks"
+    - "Both Android and iOS platforms (except missing bank additions)"
+    - "Multiple positions in setLocator (except missing bank additions)"
+    
+  xml_modifications:
+    - "XML files are READ-ONLY"
+    - "Never modify XML content"
+    - "Only analyze XML content"
+    
+  locator_anti_patterns:
+    - "Using XPath when accessibility ID available"
+    - "Complex XPath when simple resource-id available"
+    - "Hard-coded coordinates"
+    - "Index-based selection without attributes"
+    - "Generic locators without specificity"
+
+# Recovery and Fallback Strategies
+recovery_strategies:
+  primary_failure:
+    action: "Fall back to next priority level (P1 → P2 → P3 → P4)"
+    
+  all_priorities_exhausted:
+    action: "Combine multiple strategies with OR conditions"
+    
+  cross_platform_mismatch:
+    action: "Generate equivalent locator using platform-specific patterns"
+    
+  healing_content_insufficient:
+    action: "Use original patterns with improved priority strategy"
+    
+  bank_detection_ambiguous:
+    action: "Request manual bank specification with detected options"

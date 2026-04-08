@@ -1,0 +1,529 @@
+# Cucumber Feature File Review Rules
+# These rules are specific to Cucumber/Gherkin syntax and BDD practices
+
+# Feature file structure
+feature_structure:
+  enabled: true
+  rules:
+    - id: required_sections
+      severity: critical
+      description: "Feature files must have proper Gherkin structure"
+      required_elements:
+        - "Feature:"
+        - "Scenario:|Scenario Outline:"
+        - "Given"
+        - "When"
+        - "Then"
+      examples:
+        correct: |
+          Feature: User Login
+            As a customer
+            I want to log into my account
+            So that I can access my banking services
+          
+          Scenario: Successful login
+            Given Customer is on the login page
+            When Customer enters valid credentials
+            Then Customer should see the dashboard
+        incorrect: |
+          Feature: User Login
+          # Missing scenario structure
+
+    - id: feature_description
+      severity: minor
+      description: "Features should have clear business description"
+      pattern: |
+        Feature: [Title]
+          As a [role]
+          I want [goal]
+          So that [benefit]
+      required: true
+
+# Required tags validation
+required_tags:
+  enabled: true
+  rules:
+    - id: team_tag
+      severity: critical
+      description: "Feature files must include @Team tag"
+      pattern: '@Team:[^\s:]+'
+      format: '@Team:Team_Name'
+      examples:
+        correct: ["@Team:TX_Thanos_Team"]
+        incorrect: ["@Team-TX_Thanos_Team", "@team:TX_Thanos_Team"]
+
+    - id: component_tag
+      severity: critical
+      description: "Feature files must include @component tag"
+      pattern: '@component:[^\s:]+'
+      format: '@component:ComponentName'
+      examples:
+        correct: ["@component:Logout", "@component:LoginFlow", "@component:PaymentFlow"]
+        incorrect: ["@component-Logout"]
+
+    - id: testcase_id_tag
+      severity: critical
+      description: "Each Scenario/Scenario Outline must include testcase ID tag"
+      pattern: '@[A-Z]+-[0-9]+'
+      format: '@TQTC-####'
+      placement: "Above Scenario/Scenario Outline declaration"
+      examples:
+        correct: ["@TQTC-2180", "@PROD-1234", "@TEST-5678"]
+        incorrect: ["@TQTC2180", "@TQTC_2180"]
+
+    - id: test_data_tag
+      severity: critical
+      description: "Each Scenario/Scenario Outline must include @TestData tag"
+      pattern: '@TestData:[^\s:]+'
+      format: '@TestData:Data_Description'
+      placement: "Above Scenario/Scenario Outline declaration"
+      examples:
+        correct: ["@TestData:only_use_for_history_account", "@TestData:login_credentials"]
+        incorrect: ["@TestData-only_use_for_history_account", "@testdata:login_credentials"]
+
+# Tag format validation
+tag_format:
+  enabled: true
+  rules:
+    - id: tag_naming_convention
+      severity: major
+      description: "Tags must follow correct format"
+      validation_rules:
+        portfolio:
+          pattern: '^@portfolio:[^\s:]+$'
+          example: "@portfolio:Accounts"
+          invalid_examples: ["@portfolio-Accounts", "@portfolio:Name:WithColons"]
+        pod:
+          pattern: '^@pod:[^\s:]+$'
+          example: "@pod:AccountServices"
+          invalid_examples: ["@pod-AccountServices", "@pod:Name:WithColons"]
+        component:
+          pattern: '^@component:[^\s:]+$'
+          example: "@component:ActHistory"
+          invalid_examples: ["@component-ActHistory", "@Component:act_history", "@component:Name:WithColons"]
+
+    - id: tag_placement
+      severity: major
+      description: "Tags must be placed at correct levels"
+      placement_rules:
+        feature_level:
+          - "@Team:TeamName"
+          - "@component:ComponentName"
+        scenario_level:
+          - "@TQTC-#### (testcase ID)"
+          - "@TestData:DataDescription"
+      examples:
+        correct: |
+          @Team:TX_Thanos_Team @component:Logout
+          Feature: User Logout Management
+          
+          @TQTC-2180 @TestData:only_use_for_history_account
+          Scenario: Successfully logout from application
+            Given Customer is logged in
+            When Customer clicks logout button
+            Then Customer should be logged out
+        incorrect: |
+          @TQTC-2180 @TestData:only_use_for_history_account
+          Feature: User Logout Management
+          
+          Scenario: Successfully logout from application
+            Given Customer is logged in
+            When Customer clicks logout button
+            Then Customer should be logged out
+
+# Step definition validation
+step_definitions:
+  enabled: true
+  rules:
+    - id: undefined_step_reference
+      severity: critical
+      priority: 1
+      mandatory: true
+      description: "ALL steps must have corresponding step definitions - NO EXCEPTIONS"
+      validation_type: "cross_reference"
+      failure_impact: "Test execution will fail with undefined step error"
+      
+      step_definition_paths:
+        - "src/test/code/steps/**/*.kt"
+        - "src/test/code/steps/**/*.java"
+      feature_file_paths:
+        - "src/test/resources/features/**/*.feature"
+      
+      validation_process:
+        step_extraction:
+          - "Extract ALL steps from feature files (Given/When/Then/And/But)"
+          - "Normalize step text by removing keywords and trimming whitespace"
+          - "Handle multi-line steps and data tables"
+          - "Include steps from Background sections"
+          - "Process Scenario Outline steps with parameter placeholders"
+        
+        step_definition_matching:
+          - "Search for @Given/@When/@Then/@And/@But annotations in all step files"
+          - "Extract quoted text from annotations as step patterns"
+          - "Support both simple strings and regex patterns"
+          - "Handle parameterized steps with {string}, {int}, {double} placeholders"
+          - "Match case-sensitive and case-insensitive patterns"
+        
+        matching_algorithm:
+          - "1. Perform exact string matching first (case-sensitive)"
+          - "2. If no exact match, perform case-insensitive matching"
+          - "3. Try parameter substitution matching for {string}, {int}, etc."
+          - "4. Calculate similarity scores for fuzzy matching"  
+          - "5. Report ANY steps with no matches as CRITICAL violations"
+
+      similarity_threshold: 0.8
+      fail_on_missing: true
+      validation_tools_required:
+        - "grep/search tools to scan step definition files"
+        - "regex pattern matching for parameterized steps"
+        - "cross-reference validation between feature and step files"
+      
+      reporting_format:
+        template: |
+          CRITICAL VIOLATION: Undefined Step Definition
+          • Feature File: {feature_file}:{line_number}
+          • Step: "{step_text}"
+          • Issue: No corresponding step definition found
+          • Impact: Test will fail with "Undefined step" error during execution
+          • Fix: Add step definition:
+            @{step_type}("{step_text}")
+            fun {method_name}() {
+                // Implementation needed
+            }
+          • Recommended Location: src/test/code/steps/{module}Steps.kt
+          • Closest Match: {closest_match} (similarity: {similarity_score}%)
+        
+        required_elements:
+          - "Show exact line number and step text from feature file"
+          - "List closest matching step definitions with similarity percentage"
+          - "Provide code template for creating missing step definition"
+          - "Include recommended file path for new step definition"
+          - "Explain test execution failure impact"
+
+    - id: step_parameter_matching
+      severity: major
+      description: "Step parameters should match between feature and implementation"
+      parameter_types:
+        string: '{string}'
+        int: '{int}'
+        double: '{double}'
+        word: '{word}'
+      examples:
+        correct: |
+          # Feature file:
+          When Customer enters "john@example.com" in email field
+          
+          # Step definition:
+          @When("Customer enters {string} in email field")
+          fun customerEntersEmailInField(email: String) { ... }
+        incorrect: |
+          # Feature file:
+          When Customer enters "john@example.com" in email field
+          
+          # Step definition (missing parameter):
+          @When("Customer enters email in field")
+          fun customerEntersEmailInField() { ... }
+
+# Step writing best practices
+step_writing:
+  enabled: true
+  rules:
+    - id: business_language
+      severity: major
+      description: "Steps should use business language, not technical implementation"
+      forbidden_patterns:
+        technical_details:
+          - 'xpath='
+          - 'css='
+          - 'id='
+          - 'driver\.'
+          - 'click\(\)'
+          - 'findElement'
+          - 'Thread\.sleep'
+        implementation_details:
+          - 'System\.out'
+          - 'assert'
+          - 'verify'
+          - 'test'
+      examples:
+        correct: |
+          Given Customer is on the login page
+          When Customer enters valid username and password
+          And Customer clicks the login button
+          Then Customer should see the dashboard
+        incorrect: |
+          Given driver.get("http://example.com/login")
+          When driver.findElement(By.id("username")).sendKeys("user")
+          And driver.findElement(By.xpath("//button")).click()
+          Then assert dashboard.isDisplayed()
+
+    - id: reusable_steps
+      severity: minor
+      description: "Steps should be reusable across scenarios"
+      recommended_patterns:
+        - 'Given (Customer|Consumer) is on the .* page'
+        - 'When (Customer|Consumer) .* the .* field'
+        - 'Then (Customer|Consumer) should see .*'
+        - 'And (Customer|Consumer) clicks .* button'
+      
+      avoid_patterns:
+        - 'And (Customer|Consumer) clicks? on.*xpath'          # Technical details
+
+    - id: consistent_persona
+      severity: minor
+      description: "Use consistent persona throughout feature files"
+      preferred_personas: ["Customer", "Consumer"]
+      avoid_mixing: "Don't mix Customer and Consumer in same feature"
+
+# Scenario structure
+scenario_structure:
+  enabled: true
+  rules:
+    - id: given_when_then_structure
+      severity: major
+      description: "Scenarios should follow Given-When-Then structure"
+      required_flow:
+        - "Given: Set up initial state/preconditions"
+        - "When: Perform action(s)"
+        - "Then: Verify outcome(s)"
+      
+      optional_steps:
+        - "And: Additional preconditions, actions, or verifications"
+        - "But: Negative verifications"
+
+    - id: scenario_independence
+      severity: major
+      description: "Scenarios should be independent of each other"
+      best_practices:
+        - "Each scenario should set up its own preconditions"
+        - "Don't rely on state from previous scenarios"
+        - "Use Background for common setup"
+
+    - id: scenario_naming
+      severity: minor
+      description: "Scenario names should be descriptive and business-focused"
+      examples:
+        correct: 
+          - "Successful login with valid credentials"
+          - "Account balance displays correctly after deposit"
+          - "Error message shown for invalid email format"
+        incorrect:
+          - "Test 1"
+          - "Login test"
+          - "Check balance"
+
+# Background usage
+background_usage:
+  enabled: true
+  rules:
+    - id: background_for_common_setup
+      severity: info
+      description: "Use Background for common preconditions"
+      appropriate_for:
+        - "Setup steps common to all scenarios in feature"
+        - "User authentication steps"
+        - "Navigation to starting page"
+      
+      examples:
+        correct: |
+          Background:
+            Given Customer has a valid account
+            And Customer is logged into the application
+          
+          Scenario: View account balance
+            Given Customer is on the account page
+            When Customer selects checking account
+            Then Customer should see current balance
+        
+        avoid: |
+          Scenario: View account balance
+            Given Customer has a valid account
+            And Customer is logged into the application
+            And Customer is on the account page
+            When Customer selects checking account
+            Then Customer should see current balance
+
+# Scenario Outline and Examples
+scenario_outline:
+  enabled: true
+  rules:
+    - id: examples_table_required
+      severity: major
+      description: "Scenario Outline must have Examples table"
+      required_for: "Scenario Outline"
+      min_examples: 1
+      
+      examples:
+        correct: |
+          Scenario Outline: Login with different credentials
+            Given Customer is on login page
+            When Customer enters "<username>" and "<password>"
+            Then Customer should see "<result>"
+          
+          Examples:
+            | username | password | result          |
+            | valid    | valid    | dashboard       |
+            | invalid  | valid    | error message   |
+            | valid    | invalid  | error message   |
+
+    - id: parameter_consistency
+      severity: major
+      description: "Parameters must be consistent between scenario and examples"
+      validation: "All <parameters> in scenario must exist in Examples table headers"
+
+    - id: meaningful_examples
+      severity: minor
+      description: "Examples should cover meaningful test cases"
+      recommendations:
+        - "Include positive and negative test cases"
+        - "Cover boundary conditions"
+        - "Include edge cases"
+        - "Use descriptive parameter names"
+
+# Data tables
+data_tables:
+  enabled: true
+  rules:
+    - id: table_formatting
+      severity: minor
+      description: "Data tables should be properly formatted"
+      formatting_rules:
+        - "Align columns with spaces"
+        - "Use consistent spacing"
+        - "Include table headers"
+      
+      examples:
+        correct: |
+          Given Customer has the following accounts:
+            | Account Type | Balance | Status |
+            | Checking     | 1000.00 | Active |
+            | Savings      | 5000.00 | Active |
+        incorrect: |
+          Given Customer has the following accounts:
+            |Account Type|Balance|Status|
+            |Checking|1000.00|Active|
+            |Savings|5000.00|Active|
+
+    - id: table_usage
+      severity: info
+      description: "Use tables for structured test data"
+      appropriate_for:
+        - "Multiple related data items"
+        - "Tabular verification data"
+        - "Configuration parameters"
+
+# Comments and documentation
+documentation:
+  enabled: true
+  rules:
+    - id: feature_documentation
+      severity: minor
+      description: "Features should have clear business documentation"
+      includes:
+        - "Business value explanation"
+        - "User role definition"
+        - "Acceptance criteria"
+
+    - id: comment_usage
+      severity: info
+      description: "Use comments sparingly and purposefully"
+      appropriate_for:
+        - "Complex business rules explanation"
+        - "Temporary notes during development"
+        - "Links to requirements or tickets"
+      
+      avoid:
+        - "Obvious explanations"
+        - "Redundant information"
+        - "Implementation details"
+
+# File organization
+file_organization:
+  enabled: true
+  rules:
+    - id: feature_file_naming
+      severity: minor
+      description: "Feature files should have descriptive names"
+      pattern: '^[A-Z][a-zA-Z0-9]*\.feature$'
+      examples:
+        correct: ["UserLogin.feature", "AccountBalance.feature", "PaymentProcessing.feature"]
+        incorrect: ["test1.feature", "feature.feature", "user_login.feature"]
+
+    - id: feature_grouping
+      severity: info
+      description: "Group related scenarios in same feature file"
+      guidelines:
+        - "One business capability per feature file"
+        - "Related scenarios together"
+        - "Reasonable file size (not too many scenarios)"
+
+    - id: directory_structure
+      severity: info
+      description: "Organize feature files in logical directory structure"
+      recommended_structure: |
+        features/
+        ├── accounts/
+        │   ├── balance/
+        │   └── history/
+        ├── payments/
+        │   ├── transfer/
+        │   └── bills/
+        └── authentication/
+            ├── login/
+            └── registration/
+
+# Validation and reporting
+validation:
+  enabled: true
+  rules:
+    - id: gherkin_syntax
+      severity: critical
+      description: "Valid Gherkin syntax required"
+      validates:
+        - "Proper keyword usage"
+        - "Indentation consistency"
+        - "Line termination"
+        - "Special character handling"
+
+    - id: step_uniqueness
+      severity: info
+      description: "Avoid duplicate step definitions"
+      recommendation: "Reuse existing steps when possible"
+
+# Integration settings
+integration:
+  feature_file_extensions:
+    - ".feature"
+  
+  step_definition_languages:
+    - "kotlin"
+    - "java"
+  
+  validation_tools:
+    - "cucumber-lint"
+    - "gherkin-lint"
+  
+  ide_support:
+    - "IntelliJ IDEA Cucumber plugin"
+    - "VS Code Cucumber extension"
+
+# Best practices summary
+best_practices:
+  writing_guidelines:
+    - "Write from user perspective"
+    - "Use business language, not technical terms"
+    - "Keep scenarios focused and concise"
+    - "Make scenarios independent"
+    - "Use descriptive names for scenarios and features"
+  
+  collaboration:
+    - "Involve business stakeholders in writing"
+    - "Review features before implementation"
+    - "Keep features updated with changes"
+    - "Use consistent terminology across team"
+  
+  maintenance:
+    - "Regularly review and refactor scenarios"
+    - "Remove obsolete scenarios"
+    - "Update scenarios when requirements change"
+    - "Keep step definitions aligned with feature files"
