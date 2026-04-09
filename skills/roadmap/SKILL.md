@@ -48,3 +48,30 @@ What could cause timeline slippage? How will you mitigate?
 ---
  
 Keep this roadmap realistic for a solo developer. Flag if any milestone looks too ambitious.
+
+---
+
+## Save to Notion
+
+After generating the roadmap above, save it to the project's Notion space.
+
+### Instructions
+
+1. **Ask the user** for:
+   - **Project name** — which project is this roadmap for (e.g., Task Tracker, Expense Tracker, Personal AI)
+   - **Target version** — the version this roadmap targets (e.g., `1.2.0`)
+
+2. **Find the project in Notion** — use `mcp__notion__notion-search` to locate the project's root page.
+
+3. **Find the version page** — use `mcp__notion__notion-fetch` on the project page to list its children, then look for a child page matching the target version number (e.g., `1.2.0`).
+
+4. **If the version page does not exist** — create it using `mcp__notion__notion-create-pages` as a child of the project page, with the title set to the version number (e.g., `1.2.0`).
+
+5. **Create the roadmap page** — use `mcp__notion__notion-create-pages` as a child of the version page:
+   - **Title**: `[Project] Roadmap — [Scope/Version Range]` (follow the Notion documentation standard)
+   - **Icon**: 🗺️
+   - **Content**: The full roadmap output above, formatted in Notion Markdown:
+     - Include all sections: Vision, Milestones, Release Plan, Prioritization Rationale, Assumptions, Risks
+     - Add metadata at the top: **Status**: Draft, **Created**: today, **Time horizon**: as specified
+
+6. **Confirm to the user** — share the Notion page URL once created.

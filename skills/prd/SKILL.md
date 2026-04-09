@@ -53,3 +53,30 @@ Checklist format. Each item should be verifiable by a tester.
 ---
  
 After writing the PRD, suggest 2–3 open questions that would most impact the design decisions, if any are not already covered.
+
+---
+
+## Save to Notion
+
+After generating the PRD above, save it to the project's Notion space.
+
+### Instructions
+
+1. **Ask the user** for:
+   - **Project name** — which project is this PRD for (e.g., Task Tracker, Expense Tracker, Personal AI)
+   - **Target version** — the version this PRD targets (e.g., `1.2.0`)
+
+2. **Find the project in Notion** — use `mcp__notion__notion-search` to locate the project's root page.
+
+3. **Find the version page** — use `mcp__notion__notion-fetch` on the project page to list its children, then look for a child page matching the target version number (e.g., `1.2.0`).
+
+4. **If the version page does not exist** — create it using `mcp__notion__notion-create-pages` as a child of the project page, with the title set to the version number (e.g., `1.2.0`).
+
+5. **Create the PRD page** — use `mcp__notion__notion-create-pages` as a child of the version page:
+   - **Title**: `[Project] PRD — [Feature Name]` (follow the Notion documentation standard)
+   - **Icon**: 📋
+   - **Content**: The full PRD output above, formatted in Notion Markdown:
+     - Include all sections: Overview, Background & Context, User Stories, Functional Requirements, Non-Functional Requirements, Out of Scope, Open Questions, Acceptance Criteria
+     - Add metadata at the top: **Status**: Draft, **Created**: today, **Author**: Solo
+
+6. **Confirm to the user** — share the Notion page URL once created.

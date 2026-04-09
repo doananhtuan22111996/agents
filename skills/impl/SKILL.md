@@ -186,6 +186,8 @@ swiftlint lint --strict
 
 ## 13. Commit & Create PR
 
+**Rule: Always use MCP GitHub tools for push and PR operations. Never use `gh` CLI — it is unreliable and may fail.**
+
 ### Step 1 — Stage and commit
 ```bash
 git add <specific files>
@@ -218,6 +220,7 @@ Follow the `/pr` workflow to generate the full PR description:
 - Produce PR title: `feat(scope): description`
 - Produce PR body: What / Why / How / Test Plan / Checklist
 - Suggest labels based on change type
+- **Use MCP GitHub `create_pull_request` tool to create the PR — do NOT use `gh` CLI**
 
 ---
 

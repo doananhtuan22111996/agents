@@ -64,4 +64,21 @@ Once the PR title and body are generated above, create the pull request:
 1. Ensure all changes are committed and pushed to the remote branch (use `git push`)
 2. Use the MCP GitHub `create_pull_request` tool to create the PR — do NOT use `gh` CLI
 3. If the base branch is not `main`, specify it in the MCP tool call
-4. Return the PR URL to the user
+
+### Verify PR Description
+
+After creating the PR, always verify the description renders correctly:
+
+4. **Fetch the PR** — use MCP GitHub to read the PR that was just created
+5. **Review the description** — check for formatting issues:
+   - Markdown headings render correctly (`###`, `##`)
+   - Checklists render as checkboxes (`- [ ]`)
+   - Code blocks have proper fencing (triple backticks with language)
+   - Tables are properly aligned
+   - No broken line breaks (missing blank lines between sections)
+   - No raw HTML or escaped characters showing
+6. **If formatting is broken** — use MCP GitHub to update the PR body with the corrected description. Common fixes:
+   - Add missing blank lines before/after headings, lists, and code blocks
+   - Ensure list items have consistent indentation
+   - Escape special characters if needed
+7. **Return the PR URL** to the user only after the description is verified correct
